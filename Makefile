@@ -36,6 +36,8 @@ CC += ${MY_CFLAGS}
 
 EXTRA_CFLAGS += -I $(PWD)/include
 
+5G_CLK_FREQ := src/clk_freq.o
+
 5G_MOD := src/gtp5g.o
 
 5G_LOG	:= src/log.o 
@@ -71,7 +73,7 @@ EXTRA_CFLAGS += -I $(PWD)/include
 
 # Build files 
 obj-m += $(MODULE_NAME).o
-$(MODULE_NAME)-objs := $(5G_MOD) $(5G_LOG) $(5G_UTIL) $(5G_GTPU) \
+$(MODULE_NAME)-objs := $(5G_CLK_FREQ) $(5G_MOD) $(5G_LOG) $(5G_UTIL) $(5G_GTPU) \
 						$(5G_GENL) $(5G_PFCP) $(5G_PROC) 
 
 default: module
