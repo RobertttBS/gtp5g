@@ -25,6 +25,7 @@
 #include "api_version.h"
 #include "pktinfo.h"
 
+#include "clk_freq.h"
 /* used to compatible with api with/without seid */
 #define MSG_KOV_LEN 4
 
@@ -743,6 +744,7 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
     struct far *far;
     //struct gtp5g_qer *qer;
     struct iphdr *iph;
+    uint64_t cur_tsc, last_tsc;
     u64 volume_mbqe = 0;
 
     /* Read the IP destination address and resolve the PDR.
@@ -766,8 +768,13 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
     //    GTP5G_ERR(dev, "%s:%d QER Rule found, id(%#x) qfi(%#x) TODO\n", 
     //            __func__, __LINE__, qer->id, qer->qfi);
     //}
-
+    last_tsc = get_tsc();
+    GTP5G_LOG(dev, "CPU: %llu MHz\n", get_cpu_freq());
+    GTP5G_LOG(dev, "start_clk: %llu\n", last_tsc);
     far = pdr->far;
+    cur_tsc = get_tsc();
+    GTP5G_LOG(dev, "cur_clk: %llu\n", cur_tsc);
+    GTP5G_LOG(dev, "clk(s): %llu\n", cur_tsc - last_tsc);
     if (far) {
         // One and only one of the DROP, FORW and BUFF flags shall be set to 1.
         // The NOCP flag may only be set if the BUFF flag is set.
