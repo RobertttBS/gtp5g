@@ -775,6 +775,8 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
     cur_tsc = get_tsc();
     GTP5G_LOG(dev, "cur_clk: %llu\n", cur_tsc);
     GTP5G_LOG(dev, "clk(s): %llu\n", cur_tsc - last_tsc);
+    pktinfo->color = 'W';
+    GTP5G_LOG(dev, "packet color: %c\n", pktinfo->color);
     if (far) {
         // One and only one of the DROP, FORW and BUFF flags shall be set to 1.
         // The NOCP flag may only be set if the BUFF flag is set.
