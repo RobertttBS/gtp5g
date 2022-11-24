@@ -709,9 +709,17 @@ static int gtp5g_fwd_skb_ipv4(struct sk_buff *skb,
             dev);
 
     qer = pdr->qer;
-    if(qer){
-        printk("find qer\n");
-    }
+    
+    printk("pkt size: %u bytes\n", skb->len);
+    printk("[Parameter] CIR: %llu bytes/sec, CBS: %llu bytes\n", qer->meter_param.cir, qer->meter_param.cbs);
+    printk("[Parameter] PIR: %llu bytes/sec, PBS: %llu bytes\n", qer->meter_param.pir, qer->meter_param.pbs);
+    printk("[Profile] CBS: %llu bytes\n", qer->meter_profile.cbs);
+    printk("[Profile] PBS: %llu bytes\n", qer->meter_profile.pbs);
+    printk("[Profile] CIR_PERIOD: %llu clks/each update, CIR_BYTES_PER_PERIOD: %llu bytes/each update\n", qer->meter_profile.cir_period, qer->meter_profile.cir_bytes_per_period);
+    printk("[Profile] PIR_PERIOD: %llu clks/each update, PIR_BYTES_PER_PERIOD: %llu bytes/each update\n", qer->meter_profile.pir_period, qer->meter_profile.pir_bytes_per_period);
+    printk("[Runtime] TC: %llu bytes available, TIME_TC: %llu clks\n", qer->meter_runtime.tc, qer->meter_runtime.time_tc);
+    printk("[Runtime] TP: %llu bytes available, TIME_TP: %llu clks\n", qer->meter_runtime.tp, qer->meter_runtime.time_tp);
+    
 
     printk("pkt count:\nGREEN: %llu, YELLOW: %llu, RED: %llu\n", pdr->green_pkt_cnt, pdr->yellow_pkt_cnt, pdr->red_pkt_cnt);
 
@@ -781,8 +789,6 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
     
     far = pdr->far;
     
-    pktinfo->color = 'W';
-    GTP5G_LOG(dev, "packet color: %c\n", pktinfo->color);
     if (far) {
         // One and only one of the DROP, FORW and BUFF flags shall be set to 1.
         // The NOCP flag may only be set if the BUFF flag is set.
