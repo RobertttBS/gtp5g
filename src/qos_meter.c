@@ -11,7 +11,7 @@
 #include "clk_freq.h"
 #include "qos_meter.h"
 
-#define TB_MIN_PERIOD 200
+#define TB_MIN_PERIOD 400000
 #define MTU 1500
 
 static void get_tb_parameters(uint64_t cpu_freq, uint64_t rate, uint64_t *tb_period, uint64_t *tb_bytes_per_period){
@@ -84,23 +84,29 @@ char trtcm_color_blind_check(struct trtcm_profile *profile, struct trtcm_runtime
     tc_cur = runtime->tc + tc_period_diff * profile->cir_bytes_per_period;
     if(tc_cur > profile->cbs)
         tc_cur = profile->cbs;
-    
+    printk("After adding token, tc: %llu\n", tc_cur);
+
+
     tp_cur = runtime->tp + tp_period_diff * profile->pir_bytes_per_period;
     if(tp_cur > profile->pbs)
         tp_cur = profile->pbs;
+    printk("After adding token, tp: %llu\n", tp_cur);
 
     // Color marking
     if(tp_cur < pkt_len){
         runtime->tc = tc_cur;
         runtime->tp = tp_cur;
+        printk("Red\n");
         return 'R';
     }
     if(tc_cur < pkt_len){
         runtime->tc = tc_cur;
         runtime->tp = tp_cur - pkt_len;
+        printk("Yellow\n");
         return 'Y';
     }
     runtime->tc = tc_cur - pkt_len;
     runtime->tp = tp_cur - pkt_len;
+    printk("Green\n");
     return 'G';
 }

@@ -96,6 +96,7 @@ struct pdr {
     u64 green_pkt_cnt;
     u64 yellow_pkt_cnt;
     u64 red_pkt_cnt;
+    u64 white_pkt_cnt;
 };
 
 extern void pdr_context_delete(struct pdr *);

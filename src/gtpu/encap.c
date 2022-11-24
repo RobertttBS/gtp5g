@@ -709,7 +709,12 @@ static int gtp5g_fwd_skb_ipv4(struct sk_buff *skb,
             dev);
 
     qer = pdr->qer;
-    
+    /*
+    printk("qer id: %u\n", qer->id);
+    printk("gbr: %u\n", qer->gbr.dl_high);
+    printk("mbr: %u\n", qer->mbr.dl_high);
+    */
+    /*
     printk("pkt size: %u bytes\n", skb->len);
     printk("[Parameter] CIR: %llu bytes/sec, CBS: %llu bytes\n", qer->meter_param.cir, qer->meter_param.cbs);
     printk("[Parameter] PIR: %llu bytes/sec, PBS: %llu bytes\n", qer->meter_param.pir, qer->meter_param.pbs);
@@ -719,8 +724,27 @@ static int gtp5g_fwd_skb_ipv4(struct sk_buff *skb,
     printk("[Profile] PIR_PERIOD: %llu clks/each update, PIR_BYTES_PER_PERIOD: %llu bytes/each update\n", qer->meter_profile.pir_period, qer->meter_profile.pir_bytes_per_period);
     printk("[Runtime] TC: %llu bytes available, TIME_TC: %llu clks\n", qer->meter_runtime.tc, qer->meter_runtime.time_tc);
     printk("[Runtime] TP: %llu bytes available, TIME_TP: %llu clks\n", qer->meter_runtime.tp, qer->meter_runtime.time_tp);
+    */
     
-
+    if(qer->qfi != 9){
+        pktinfo->color = trtcm_color_blind_check(&(qer->meter_profile), &(qer->meter_runtime), get_tsc(), skb->len);
+        if(pktinfo->color == 'G'){
+            pdr->green_pkt_cnt++;
+        }
+        else if(pktinfo->color == 'Y'){
+            pdr->yellow_pkt_cnt++;
+        }
+        else if(pktinfo->color == 'R'){
+            pdr->red_pkt_cnt++; 
+        }
+        //else
+            //printk("[ERROR] Meter color number out of range\n") 
+    }
+    else{
+        pktinfo->color = 'W';
+        pdr->white_pkt_cnt++;
+    }
+    
     printk("pkt count:\nGREEN: %llu, YELLOW: %llu, RED: %llu\n", pdr->green_pkt_cnt, pdr->yellow_pkt_cnt, pdr->red_pkt_cnt);
 
     pdr->dl_pkt_cnt++;
