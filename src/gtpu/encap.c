@@ -26,6 +26,7 @@
 #include "pktinfo.h"
 
 #include "clk_freq.h"
+#include "qos_meter.h"
 /* used to compatible with api with/without seid */
 #define MSG_KOV_LEN 4
 
@@ -677,6 +678,8 @@ static int gtp5g_fwd_skb_ipv4(struct sk_buff *skb,
     struct flowi4 fl4;
     struct iphdr *iph = ip_hdr(skb);
     struct outer_header_creation *hdr_creation;
+    struct qer *qer;
+
     u64 volume;
 
     if (!(pdr->far && pdr->far->fwd_param &&
@@ -705,7 +708,15 @@ static int gtp5g_fwd_skb_ipv4(struct sk_buff *skb,
             &fl4, 
             dev);
 
+    qer = pdr->qer;
+    if(qer){
+        printk("find qer\n");
+    }
+
+    printk("pkt count:\nGREEN: %llu, YELLOW: %llu, RED: %llu\n", pdr->green_pkt_cnt, pdr->yellow_pkt_cnt, pdr->red_pkt_cnt);
+
     pdr->dl_pkt_cnt++;
+    printk("pkt num: %llu\n", pdr->dl_pkt_cnt);
     pdr->dl_byte_cnt += skb->len;
     GTP5G_INF(NULL, "PDR (%u) DL_PKT_CNT (%llu) DL_BYTE_CNT (%llu)", pdr->id, pdr->dl_pkt_cnt, pdr->dl_byte_cnt);
 
@@ -744,7 +755,6 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
     struct far *far;
     //struct gtp5g_qer *qer;
     struct iphdr *iph;
-    uint64_t cur_tsc, last_tsc;
     u64 volume_mbqe = 0;
 
     /* Read the IP destination address and resolve the PDR.
@@ -768,13 +778,9 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
     //    GTP5G_ERR(dev, "%s:%d QER Rule found, id(%#x) qfi(%#x) TODO\n", 
     //            __func__, __LINE__, qer->id, qer->qfi);
     //}
-    last_tsc = get_tsc();
-    GTP5G_LOG(dev, "CPU: %llu MHz\n", get_cpu_freq());
-    GTP5G_LOG(dev, "start_clk: %llu\n", last_tsc);
+    
     far = pdr->far;
-    cur_tsc = get_tsc();
-    GTP5G_LOG(dev, "cur_clk: %llu\n", cur_tsc);
-    GTP5G_LOG(dev, "clk(s): %llu\n", cur_tsc - last_tsc);
+    
     pktinfo->color = 'W';
     GTP5G_LOG(dev, "packet color: %c\n", pktinfo->color);
     if (far) {

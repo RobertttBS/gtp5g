@@ -66,6 +66,7 @@ struct pdr {
     u32 *far_id;
     struct far *far;
     u32 *qer_ids; 
+    struct qer *qer;
     u32 qer_num;
     u8  qfi;
     u32 *urr_ids;
@@ -91,6 +92,10 @@ struct pdr {
     u64                     dl_pkt_cnt;
     u64                     ul_byte_cnt;
     u64                     dl_byte_cnt;
+
+    u64 green_pkt_cnt;
+    u64 yellow_pkt_cnt;
+    u64 red_pkt_cnt;
 };
 
 extern void pdr_context_delete(struct pdr *);
