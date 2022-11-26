@@ -56,6 +56,8 @@ EXTRA_CFLAGS += -I $(PWD)/include
 
 5G_STATIC_QUEUE := src/static_queue.o
 
+5G_DYNAMIC_QUEUE := src/dynamic_queue.o
+
 5G_GENL := src/genl/genl.o \
 			src/genl/genl_version.o \
 			src/genl/genl_pdr.o \
@@ -78,7 +80,7 @@ EXTRA_CFLAGS += -I $(PWD)/include
 # Build files 
 obj-m += $(MODULE_NAME).o
 $(MODULE_NAME)-objs := $(5G_CLK_FREQ) $(5G_QOS_METER) $(5G_MOD) $(5G_LOG) $(5G_UTIL) $(5G_GTPU) \
-						$(5G_STATIC_QUEUE)  $(5G_GENL) $(5G_PFCP) $(5G_PROC) 
+						$(5G_STATIC_QUEUE) $(5G_DYNAMIC_QUEUE) $(5G_GENL) $(5G_PFCP) $(5G_PROC) 
 
 default: module
 
