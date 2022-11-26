@@ -6,6 +6,7 @@
 #include <linux/net.h>
 
 #include "dev.h"
+#include "qos_meter.h"
 
 struct qer {
     struct hlist_node hlist_id;
@@ -31,6 +32,10 @@ struct qer {
     uint8_t rcsr;
     struct net_device *dev;
     struct rcu_head rcu_head;
+    // For color marking
+    struct trtcm_param meter_param;
+    struct trtcm_profile meter_profile;
+    struct trtcm_runtime meter_runtime;
 };
 
 extern void qer_context_delete(struct qer *);
