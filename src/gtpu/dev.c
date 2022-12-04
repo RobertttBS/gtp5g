@@ -121,7 +121,6 @@ const struct net_device_ops gtp5g_netdev_ops = {
 int dev_hashtable_new(struct gtp5g_dev *gtp, int hsize)
 {
     int i;
-    uint64_t config_clk;
 
     gtp->addr_hash = kmalloc_array(hsize, sizeof(struct hlist_head),
         GFP_KERNEL);
@@ -178,19 +177,18 @@ int dev_hashtable_new(struct gtp5g_dev *gtp, int hsize)
     if (!gtp->related_urr_hash)
         goto err10;
 
-    gtp->queue_profile = (struct wred_profile *)kmalloc(sizeof(struct wred_profile) * QUEUE_NUM,
+    gtp->s_queue_array = (struct static_queue *)kmalloc(sizeof(struct static_queue) * QUEUE_NUM,
             GFP_KERNEL);
-    if (!gtp->queue_profile)
+    if (!gtp->s_queue_array)
         goto err11;
-    config_clk = get_tsc();
-    for(i = 0; i < QUEUE_NUM; i++){
-        wred_profile_config(&(gtp->queue_profile[i]), i, config_clk);
-        printk("Queue ID: %d\n", gtp->queue_profile[i].queue_id);
-        printk("Last update time: %llu\n", gtp->queue_profile[i].last_update_time);
-        printk("Queue size: %d\n", gtp->queue_profile[i].s_queue.size);
-        printk("Queue capacity: %d\n", gtp->queue_profile[i].s_queue.capacity);
-    }
 
+    for(i = 0; i < QUEUE_NUM; i++){
+        create_s_queue(&(gtp->s_queue_array[i]), i, 4096);
+        printk("Queue ID: %d\n", gtp->s_queue_array[i].s_queue_id);
+        printk("Queue size: %d\n", gtp->s_queue_array[i].size);
+        printk("Queue capacity: %d\n", gtp->s_queue_array[i].capacity);
+    }
+    
     gtp->hash_size = hsize;
 
     for (i = 0; i < hsize; i++) {
@@ -210,7 +208,7 @@ int dev_hashtable_new(struct gtp5g_dev *gtp, int hsize)
     return 0;
 
 err11:
-    kfree(gtp->queue_profile);
+    kfree(gtp->s_queue_array);
 err10:
     kfree(gtp->related_bar_hash);
 err9:

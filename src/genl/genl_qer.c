@@ -6,6 +6,7 @@
 #include "genl.h"
 #include "genl_qer.h"
 #include "qer.h"
+#include "clk_freq.h"
 
 #include <linux/rculist.h>
 #include <net/netns/generic.h>
@@ -290,6 +291,7 @@ static int qer_fill(struct qer *qer, struct gtp5g_dev *gtp, struct genl_info *in
     struct nlattr *mbr_param_attrs[GTP5G_QER_MBR_ATTR_MAX + 1];
     struct nlattr *gbr_param_attrs[GTP5G_QER_GBR_ATTR_MAX + 1];
     int config;
+    uint64_t config_clk;
 
     qer->id = nla_get_u32(info->attrs[GTP5G_QER_ID]);
 
@@ -334,9 +336,17 @@ static int qer_fill(struct qer *qer, struct gtp5g_dev *gtp, struct genl_info *in
     if (info->attrs[GTP5G_QER_RCSR])
         qer->rcsr = nla_get_u8(info->attrs[GTP5G_QER_RCSR]);
 
+    // For color marking initialization
     config = trtcm_param_config(&(qer->meter_param), qer->gbr.dl_high, qer->mbr.dl_high);
     config = trtcm_profile_config(&(qer->meter_param), &(qer->meter_profile));
     config = trtcm_runtime_config(&(qer->meter_profile), &(qer->meter_runtime));
+    // For rule class queue initialization
+    config_clk = get_tsc();
+    wred_profile_config(&(qer->queue_profile), qer->qfi, (uint32_t)(qer->id), config_clk);
+    printk("Queue ID: %u\n", qer->queue_profile.d_queue_id);
+    printk("QoS flow id: %d\n", qer->queue_profile.qfi);
+    printk("Last update time: %llu\n", qer->queue_profile.last_update_time);
+    printk("Queue size: %d\n", qer->queue_profile.d_queue.size);
 
     /* Update PDRs which has not linked to this QER */
     qer_update(qer, gtp);

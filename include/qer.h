@@ -7,6 +7,7 @@
 
 #include "dev.h"
 #include "qos_meter.h"
+#include "wred.h"
 
 struct qer {
     struct hlist_node hlist_id;
@@ -36,6 +37,8 @@ struct qer {
     struct trtcm_param meter_param;
     struct trtcm_profile meter_profile;
     struct trtcm_runtime meter_runtime;
+    // For rule class queue
+    struct wred_profile queue_profile;
 };
 
 extern void qer_context_delete(struct qer *);

@@ -7,24 +7,25 @@
 
 #include "pktinfo.h"
 
-struct queue_data {
+struct s_queue_data {
     struct sk_buff *skb;
     struct gtp5g_pktinfo pktinfo;
 };
 
 struct static_queue {
-    struct queue_data *data;
+    struct s_queue_data *data;
+    int s_queue_id;
     int front;
     int rear;
     int size;
     int capacity;
 };
 
-extern void create_queue(struct static_queue *, int);
-extern void queue_push(struct static_queue *, struct queue_data);
-extern void queue_pop(struct static_queue *);
-extern struct queue_data get_front(struct static_queue *);
-extern struct queue_data get_rear(struct static_queue *);
-extern void display(struct static_queue *);
+extern void create_s_queue(struct static_queue *, int, int);
+extern void s_queue_push(struct static_queue *, struct s_queue_data);
+extern void s_queue_pop(struct static_queue *);
+extern struct s_queue_data s_queue_get_front(struct static_queue *);
+extern struct s_queue_data s_queue_get_rear(struct static_queue *);
+extern void s_queue_display(struct static_queue *);
 
 #endif // __STATIC_QUEUE_H__
