@@ -342,7 +342,7 @@ static int qer_fill(struct qer *qer, struct gtp5g_dev *gtp, struct genl_info *in
     config = trtcm_runtime_config(&(qer->meter_profile), &(qer->meter_runtime));
     // For rule class queue initialization
     config_clk = get_tsc();
-    wred_profile_config(&(qer->queue_profile), qer->qfi, (uint32_t)(qer->id), config_clk);
+    wred_profile_config(&(qer->queue_profile), qer, config_clk);
     printk("Queue ID: %u\n", qer->queue_profile.d_queue_id);
     printk("QoS flow id: %d\n", qer->queue_profile.qfi);
     printk("Last update time: %llu\n", qer->queue_profile.last_update_time);

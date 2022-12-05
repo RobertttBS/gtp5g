@@ -41,6 +41,7 @@ struct qer {
     struct wred_profile queue_profile;
 };
 
+extern void wred_profile_config(struct wred_profile *, struct qer *, uint64_t);
 extern void qer_context_delete(struct qer *);
 extern struct qer *find_qer_by_id(struct gtp5g_dev *, u64, u32);
 extern void qer_update(struct qer *, struct gtp5g_dev *);
