@@ -25,8 +25,15 @@ void wred_profile_config(struct wred_profile *queue_profile, struct qer *qer, ui
     
     create_d_queue(&(queue_profile->d_queue));
     queue_profile->low_limit = (int *)kmalloc(sizeof(int) * 2, GFP_KERNEL);
+    
     queue_profile->high_limit = (int *)kmalloc(sizeof(int) * 2, GFP_KERNEL);
+    
     queue_profile->max_drop_prob = (int *)kmalloc(sizeof(int) * 2, GFP_KERNEL);
+    
+    queue_profile->count = (int *)kmalloc(sizeof(int) * 2, GFP_KERNEL);
+    queue_profile->count[0] = -1;
+    queue_profile->count[1] = -1;
+
     queue_profile->qfi = qer->qfi;
     queue_profile->d_queue_id = (uint32_t)(qer->id);
     queue_profile->last_update_time = config_time;

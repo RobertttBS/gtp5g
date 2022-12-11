@@ -8,7 +8,7 @@
 #include "pktinfo.h"
 
 struct s_queue_data {
-    struct sk_buff *skb;
+    struct sk_buff skb;
     struct gtp5g_pktinfo pktinfo;
 };
 

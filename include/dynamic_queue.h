@@ -10,7 +10,7 @@
 
 struct d_queue_data {
     struct hlist_node queue_node;
-    struct sk_buff *skb;
+    struct sk_buff skb;
     struct gtp5g_pktinfo pktinfo;
 };
 
