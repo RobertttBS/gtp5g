@@ -10,13 +10,13 @@ int wred_processing(struct wred_profile *queue_profile, struct dynamic_queue *d_
     idle_time = cur_time - queue_profile->last_update_time;
     old_avg_size = queue_profile->avg_size;
     if(d_queue->size == 0){
-        queue_profile->avg_size = ((100 - queue_profile->wq) * old_avg_size);
-        queue_profile->avg_size /= 100;
+        queue_profile->avg_size = ((1000 - queue_profile->wq) * old_avg_size);
+        queue_profile->avg_size /= 1000;
         queue_profile->last_update_time = cur_time;
     }
     else{
-        queue_profile->avg_size = ((100 - queue_profile->wq) * old_avg_size) + (queue_profile->wq * d_queue->size);
-        queue_profile->avg_size /= 100;
+        queue_profile->avg_size = ((1000 - queue_profile->wq) * old_avg_size) + (queue_profile->wq * d_queue->size);
+        queue_profile->avg_size /= 1000;
         queue_profile->last_update_time = cur_time;
     }
 
@@ -36,19 +36,13 @@ int wred_processing(struct wred_profile *queue_profile, struct dynamic_queue *d_
                 return 0;
             }
             else{ // buf
-                struct d_queue_data tmp_queue_data;
-                tmp_queue_data.skb = *skb;
-                tmp_queue_data.pktinfo = *pktinfo;
-                d_queue_push(&(queue_profile->d_queue), &tmp_queue_data);
+                d_queue_push(&(queue_profile->d_queue), skb, pktinfo);
                 return 1;
             }
         }
         // average queue size <= low limit, buf
         else if(tmp_avg_size <= green_low_limit){
-            struct d_queue_data tmp_queue_data;
-            tmp_queue_data.skb = *skb;
-            tmp_queue_data.pktinfo = *pktinfo;
-            d_queue_push(&(queue_profile->d_queue), &tmp_queue_data);
+            d_queue_push(&(queue_profile->d_queue), skb, pktinfo);
             queue_profile->count[0] = -1;
             return 1;
         }
@@ -73,19 +67,13 @@ int wred_processing(struct wred_profile *queue_profile, struct dynamic_queue *d_
                 return 0;
             }
             else{ // buf
-                struct d_queue_data tmp_queue_data;
-                tmp_queue_data.skb = *skb;
-                tmp_queue_data.pktinfo = *pktinfo;
-                d_queue_push(&(queue_profile->d_queue), &tmp_queue_data);
+                d_queue_push(&(queue_profile->d_queue), skb, pktinfo);
                 return 1;
             }
         }
         // average queue size < low limit, buf
         else if(tmp_avg_size <= yellow_low_limit){
-            struct d_queue_data tmp_queue_data;
-            tmp_queue_data.skb = *skb;
-            tmp_queue_data.pktinfo = *pktinfo;
-            d_queue_push(&(queue_profile->d_queue), &tmp_queue_data);
+            d_queue_push(&(queue_profile->d_queue), skb, pktinfo);
             queue_profile->count[1] = -1;
             return 1;
         }

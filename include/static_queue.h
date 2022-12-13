@@ -22,7 +22,7 @@ struct static_queue {
 };
 
 extern void create_s_queue(struct static_queue *, int, int);
-extern void s_queue_push(struct static_queue *, struct s_queue_data);
+extern void s_queue_push(struct static_queue *, struct sk_buff *, struct gtp5g_pktinfo *);
 extern void s_queue_pop(struct static_queue *);
 extern struct s_queue_data s_queue_get_front(struct static_queue *);
 extern struct s_queue_data s_queue_get_rear(struct static_queue *);

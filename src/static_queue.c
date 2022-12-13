@@ -9,7 +9,8 @@ void create_s_queue(struct static_queue *s_queue, int id, int max_element){
     s_queue->capacity = max_element;
 }
 
-void s_queue_push(struct static_queue *s_queue, struct s_queue_data q_data){
+void s_queue_push(struct static_queue *s_queue, struct sk_buff *skb, struct gtp5g_pktinfo *pktinfo){
+    struct s_queue_data new_data;
     if(s_queue->size == s_queue->capacity){
         printk("This static queue is full!\n");
         return;
@@ -20,7 +21,9 @@ void s_queue_push(struct static_queue *s_queue, struct s_queue_data q_data){
     if(s_queue->rear == s_queue->capacity)
         s_queue->rear = 0;
     
-    s_queue->data[s_queue->rear] = q_data;
+    new_data.skb = *skb;
+    new_data.pktinfo = *pktinfo;
+    s_queue->data[s_queue->rear] = new_data;
 }
 
 void s_queue_pop(struct static_queue *s_queue){

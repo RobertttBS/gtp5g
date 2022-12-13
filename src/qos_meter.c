@@ -84,13 +84,13 @@ char trtcm_color_blind_check(struct trtcm_profile *profile, struct trtcm_runtime
     tc_cur = runtime->tc + tc_period_diff * profile->cir_bytes_per_period;
     if(tc_cur > profile->cbs)
         tc_cur = profile->cbs;
-    printk("After adding token, tc: %llu\n", tc_cur);
+    //printk("After adding token, tc: %llu\n", tc_cur);
 
 
     tp_cur = runtime->tp + tp_period_diff * profile->pir_bytes_per_period;
     if(tp_cur > profile->pbs)
         tp_cur = profile->pbs;
-    printk("After adding token, tp: %llu\n", tp_cur);
+    //printk("After adding token, tp: %llu\n", tp_cur);
 
     // Color marking
     if(tp_cur < pkt_len){
