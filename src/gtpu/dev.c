@@ -12,6 +12,8 @@
 #include "urr.h"
 #include "pktinfo.h"
 
+#define QUEUE_NUM 23
+
 struct gtp5g_dev *gtp5g_find_dev(struct net *src_net, int ifindex, int netnsfd)
 {
     struct gtp5g_dev *gtp = NULL;
@@ -175,6 +177,18 @@ int dev_hashtable_new(struct gtp5g_dev *gtp, int hsize)
     if (!gtp->related_urr_hash)
         goto err10;
 
+    gtp->s_queue_array = (struct static_queue *)kmalloc(sizeof(struct static_queue) * QUEUE_NUM,
+            GFP_KERNEL);
+    if (!gtp->s_queue_array)
+        goto err11;
+
+    for(i = 0; i < QUEUE_NUM; i++){
+        create_s_queue(&(gtp->s_queue_array[i]), i, 4096);
+        printk("Queue ID: %d\n", gtp->s_queue_array[i].s_queue_id);
+        printk("Queue size: %d\n", gtp->s_queue_array[i].size);
+        printk("Queue capacity: %d\n", gtp->s_queue_array[i].capacity);
+    }
+    
     gtp->hash_size = hsize;
 
     for (i = 0; i < hsize; i++) {
@@ -192,6 +206,9 @@ int dev_hashtable_new(struct gtp5g_dev *gtp, int hsize)
     }
 
     return 0;
+
+err11:
+    kfree(gtp->s_queue_array);
 err10:
     kfree(gtp->related_bar_hash);
 err9:

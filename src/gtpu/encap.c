@@ -27,6 +27,7 @@
 
 #include "clk_freq.h"
 #include "qos_meter.h"
+#include "wred.h"
 /* used to compatible with api with/without seid */
 #define MSG_KOV_LEN 4
 
@@ -680,6 +681,8 @@ static int gtp5g_fwd_skb_ipv4(struct sk_buff *skb,
     struct outer_header_creation *hdr_creation;
     struct qer *qer;
 
+    int wred_result;
+
     u64 volume;
 
     if (!(pdr->far && pdr->far->fwd_param &&
@@ -736,6 +739,7 @@ static int gtp5g_fwd_skb_ipv4(struct sk_buff *skb,
         }
         else if(pktinfo->color == 'R'){
             pdr->red_pkt_cnt++; 
+            return gtp5g_drop_skb_ipv4(skb, dev, pdr);
         }
         //else
             //printk("[ERROR] Meter color number out of range\n") 
@@ -745,6 +749,19 @@ static int gtp5g_fwd_skb_ipv4(struct sk_buff *skb,
         pdr->white_pkt_cnt++;
     }
     
+    wred_result = wred_processing(&(qer->queue_profile), &((qer->queue_profile).d_queue), skb, pktinfo);
+    
+    if(!wred_result)
+        return gtp5g_drop_skb_ipv4(skb, dev, pdr);
+    printk("dynamic queue length: %d\n", qer->queue_profile.d_queue.size);
+    
+    /*
+    d_queue_push(&((qer->queue_profile).d_queue), skb, pktinfo);
+    printk("1. dynamic queue length: %d\n", qer->queue_profile.d_queue.size);
+    if(pdr->green_pkt_cnt != 0 && pdr->green_pkt_cnt % 5 == 0)
+        d_queue_pop(&((qer->queue_profile).d_queue));
+    printk("2. dynamic queue length: %d\n", qer->queue_profile.d_queue.size);
+    */
     printk("pkt count:\nGREEN: %llu, YELLOW: %llu, RED: %llu\n", pdr->green_pkt_cnt, pdr->yellow_pkt_cnt, pdr->red_pkt_cnt);
 
     pdr->dl_pkt_cnt++;
