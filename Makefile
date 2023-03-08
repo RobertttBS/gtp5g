@@ -80,13 +80,11 @@ EXTRA_CFLAGS += -I $(PWD)/include
 
 # Build files
 obj-m += $(MODULE_NAME).o
-<<<<<<< HEAD
-$(MODULE_NAME)-objs := $(5G_MOD) $(5G_LOG) $(5G_UTIL) $(5G_GTPU) \
-						$(5G_GENL) $(5G_PFCP) $(5G_PROC)
-=======
+
+# $(MODULE_NAME)-objs := $(5G_MOD) $(5G_LOG) $(5G_UTIL) $(5G_GTPU) \
+# 						$(5G_GENL) $(5G_PFCP) $(5G_PROC)
 $(MODULE_NAME)-objs := $(5G_CLK_FREQ) $(5G_QOS_METER) $(5G_MOD) $(5G_LOG) $(5G_UTIL) $(5G_GTPU) \
 						$(5G_STATIC_QUEUE) $(5G_DYNAMIC_QUEUE) $(5G_WRED) $(5G_GENL) $(5G_PFCP) $(5G_PROC) 
->>>>>>> 54297fb53558af4c19e21ef31a4e5553e5c6cf42
 
 default: module
 

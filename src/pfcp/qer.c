@@ -157,28 +157,43 @@ void del_related_qer_hash(struct gtp5g_dev *gtp, struct pdr *pdr)
     }
 }
 
-int qer_set_pdr(struct pdr *pdr, struct gtp5g_dev *gtp)
+// int qer_set_pdr(struct pdr *pdr, struct gtp5g_dev *gtp)
+// {
+//     char seid_qer_id_hexstr[SEID_U32ID_HEX_STR_LEN] = {0};
+//     u32 i, j;
+//     struct pdr_node *pdr_node = NULL;
+
+//     if (!pdr)
+//         return -1;
+
+//     // clean old pdr_node
+//     del_related_qer_hash(gtp, pdr);
+
+//     for (j = 0; j < pdr->qer_num; j++) {
+//         seid_qer_id_to_hex_str(pdr->seid, pdr->qer_ids[j], seid_qer_id_hexstr);
+//         i = str_hashfn(seid_qer_id_hexstr) % gtp->hash_size;
+
+//         pdr_node = kzalloc(sizeof(*pdr_node), GFP_ATOMIC);
+//         if (!pdr_node) {
+//             return -ENOMEM;
+//         }
+//         pdr_node->pdr = pdr;
+//         hlist_add_head_rcu(&pdr_node->hlist, &gtp->related_qer_hash[i]);
+//     }
+//     return 0;
+// }
+
+void qer_set_pdr(u64 seid, u32 *qer_ids, u32 qer_num, struct hlist_node *node, struct gtp5g_dev *gtp)
 {
     char seid_qer_id_hexstr[SEID_U32ID_HEX_STR_LEN] = {0};
     u32 i, j;
-    struct pdr_node *pdr_node = NULL;
 
-    if (!pdr)
-        return -1;
+    if (!hlist_unhashed(node))
+        hlist_del_rcu(node);
 
-    // clean old pdr_node
-    del_related_qer_hash(gtp, pdr);
-
-    for (j = 0; j < pdr->qer_num; j++) {
-        seid_qer_id_to_hex_str(pdr->seid, pdr->qer_ids[j], seid_qer_id_hexstr);
+    for (j = 0; j < qer_num; j++) {
+        seid_qer_id_to_hex_str(seid, qer_ids[j], seid_qer_id_hexstr);
         i = str_hashfn(seid_qer_id_hexstr) % gtp->hash_size;
-
-        pdr_node = kzalloc(sizeof(*pdr_node), GFP_ATOMIC);
-        if (!pdr_node) {
-            return -ENOMEM;
-        }
-        pdr_node->pdr = pdr;
-        hlist_add_head_rcu(&pdr_node->hlist, &gtp->related_qer_hash[i]);
+        hlist_add_head_rcu(node, &gtp->related_qer_hash[i]);
     }
-    return 0;
 }

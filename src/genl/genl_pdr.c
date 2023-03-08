@@ -17,6 +17,7 @@
 #include "net.h"
 #include "util.h"
 #include "far.h"
+#include "qer.h"
 
 static int pdr_fill(struct pdr *, struct gtp5g_dev *, struct genl_info *);
 static int parse_pdi(struct pdr *, struct nlattr *);
@@ -470,26 +471,23 @@ static int pdr_fill(struct pdr *pdr, struct gtp5g_dev *gtp, struct genl_info *in
 
     pdr->af = AF_INET;
     pdr->far = find_far_by_id(gtp, pdr->seid, *pdr->far_id);
-<<<<<<< HEAD
 
-    err = far_set_pdr(pdr, gtp);
-    if (err)
-        return err;
+    // err = far_set_pdr(pdr, gtp);
+    // if (err)
+    //     return err;
 
-    err = urr_set_pdr(pdr, gtp);
-    if (err)
-        return err;
+    // err = urr_set_pdr(pdr, gtp);
+    // if (err)
+    //     return err;
 
-    err = qer_set_pdr(pdr, gtp);
-    if (err)
-        return err;
+    // err = qer_set_pdr(pdr, gtp);
+    // if (err)
+    //     return err;
 
-=======
     pdr->qer = find_qer_by_id(gtp, pdr->seid, *pdr->qer_ids);
     far_set_pdr(pdr->seid, *pdr->far_id, &pdr->hlist_related_far, gtp);
     urr_set_pdr(pdr->seid, pdr->urr_ids, pdr->urr_num, &pdr->hlist_related_urr, gtp);
     qer_set_pdr(pdr->seid, pdr->qer_ids, pdr->qer_num, &pdr->hlist_related_qer, gtp);
->>>>>>> 54297fb53558af4c19e21ef31a4e5553e5c6cf42
     set_pdr_qfi(pdr, gtp);
 
     if (unix_sock_client_update(pdr) < 0)

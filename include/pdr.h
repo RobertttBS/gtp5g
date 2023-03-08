@@ -59,6 +59,10 @@ struct pdr {
     struct hlist_node hlist_i_teid;
     struct hlist_node hlist_addr;
 
+    struct hlist_node hlist_related_far;
+    struct hlist_node hlist_related_qer;
+    struct hlist_node hlist_related_urr;
+
     u64 seid;
     u16 id;
     u32 precedence;

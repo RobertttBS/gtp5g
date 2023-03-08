@@ -105,7 +105,8 @@ extern struct urr *find_urr_by_id(struct gtp5g_dev *, u64, u32);
 extern void urr_update(struct urr *, struct gtp5g_dev *);
 extern void urr_append(u64, u32, struct urr *, struct gtp5g_dev *);
 extern int urr_get_pdr_ids(u16 *, int, struct urr *, struct gtp5g_dev *);
-extern int urr_set_pdr(struct pdr *, struct gtp5g_dev *);
+// extern int urr_set_pdr(struct pdr *, struct gtp5g_dev *);
+extern void urr_set_pdr(u64, u32 *, u32, struct hlist_node *, struct gtp5g_dev *);
 extern void del_related_urr_hash(struct gtp5g_dev *, struct pdr *);
 
 #endif // __URR_H__

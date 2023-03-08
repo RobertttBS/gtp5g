@@ -7,6 +7,7 @@
 #include "log.h"
 #include "pdr.h"
 #include "far.h"
+#include "qer.h"
 
 #include "util.h"
 

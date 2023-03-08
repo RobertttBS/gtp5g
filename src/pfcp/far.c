@@ -147,26 +147,39 @@ void del_related_far_hash(struct gtp5g_dev *gtp, struct pdr *pdr)
     }
 }
 
-int far_set_pdr(struct pdr *pdr, struct gtp5g_dev *gtp)
+// int far_set_pdr(struct pdr *pdr, struct gtp5g_dev *gtp)
+// {
+//     char seid_far_id_hexstr[SEID_U32ID_HEX_STR_LEN] = {0};
+//     struct pdr_node *pdr_node = NULL;
+//     u32 i;
+
+//     if (!pdr)
+//         return -1;
+
+//     del_related_far_hash(gtp, pdr);
+
+//     seid_far_id_to_hex_str(pdr->seid, *pdr->far_id, seid_far_id_hexstr);
+//     i = str_hashfn(seid_far_id_hexstr) % gtp->hash_size;
+
+//     pdr_node = kzalloc(sizeof(*pdr_node), GFP_ATOMIC);
+//     if (!pdr_node) {
+//         return -ENOMEM;
+//     }
+//     pdr_node->pdr = pdr;
+//     hlist_add_head_rcu(&pdr_node->hlist, &gtp->related_far_hash[i]);
+
+//     return 0;
+// }
+
+void far_set_pdr(u64 seid, u32 far_id, struct hlist_node *node, struct gtp5g_dev *gtp)
 {
     char seid_far_id_hexstr[SEID_U32ID_HEX_STR_LEN] = {0};
-    struct pdr_node *pdr_node = NULL;
     u32 i;
 
-    if (!pdr)
-        return -1;
+    if (!hlist_unhashed(node))
+        hlist_del_rcu(node);
 
-    del_related_far_hash(gtp, pdr);
-
-    seid_far_id_to_hex_str(pdr->seid, *pdr->far_id, seid_far_id_hexstr);
+    seid_far_id_to_hex_str(seid, far_id, seid_far_id_hexstr);
     i = str_hashfn(seid_far_id_hexstr) % gtp->hash_size;
-
-    pdr_node = kzalloc(sizeof(*pdr_node), GFP_ATOMIC);
-    if (!pdr_node) {
-        return -ENOMEM;
-    }
-    pdr_node->pdr = pdr;
-    hlist_add_head_rcu(&pdr_node->hlist, &gtp->related_far_hash[i]);
-
-    return 0;
+    hlist_add_head_rcu(node, &gtp->related_far_hash[i]);
 }
