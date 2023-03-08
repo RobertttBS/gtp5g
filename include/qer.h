@@ -7,6 +7,8 @@
 
 #include "dev.h"
 #include "pdr.h"
+#include "qos_meter.h"
+#include "wred.h"
 
 struct qer {
     struct hlist_node hlist_id;
@@ -32,8 +34,15 @@ struct qer {
     uint8_t rcsr;
     struct net_device *dev;
     struct rcu_head rcu_head;
+    // For color marking
+    struct trtcm_param meter_param;
+    struct trtcm_profile meter_profile;
+    struct trtcm_runtime meter_runtime;
+    // For rule class queue
+    struct wred_profile queue_profile;
 };
 
+extern void wred_profile_config(struct wred_profile *, struct qer *, uint64_t);
 extern void qer_context_delete(struct qer *);
 extern struct qer *find_qer_by_id(struct gtp5g_dev *, u64, u32);
 extern void qer_update(struct qer *, struct gtp5g_dev *);

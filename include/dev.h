@@ -5,6 +5,8 @@
 #include <linux/rculist.h>
 #include <linux/socket.h>
 
+#include "static_queue.h"
+
 struct gtp5g_dev {
     struct list_head list;
     struct sock *sk1u;
@@ -28,6 +30,8 @@ struct gtp5g_dev {
     
     /* Used by proc interface */
     struct list_head proc_list;
+
+    struct static_queue *s_queue_array;
 };
 
 extern const struct net_device_ops gtp5g_netdev_ops;

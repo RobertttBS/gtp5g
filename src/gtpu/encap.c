@@ -25,6 +25,9 @@
 #include "api_version.h"
 #include "pktinfo.h"
 
+#include "clk_freq.h"
+#include "qos_meter.h"
+#include "wred.h"
 /* used to compatible with api with/without seid */
 #define MSG_KOV_LEN 4
 
@@ -810,6 +813,10 @@ static int gtp5g_fwd_skb_ipv4(struct sk_buff *skb,
     struct flowi4 fl4;
     struct iphdr *iph = ip_hdr(skb);
     struct outer_header_creation *hdr_creation;
+    struct qer *qer;
+
+    int wred_result;
+
     u64 volume;
 
     if (!(pdr->far && pdr->far->fwd_param &&
@@ -838,7 +845,61 @@ static int gtp5g_fwd_skb_ipv4(struct sk_buff *skb,
             &fl4, 
             dev);
 
+    qer = pdr->qer;
+    /*
+    printk("qer id: %u\n", qer->id);
+    printk("gbr: %u\n", qer->gbr.dl_high);
+    printk("mbr: %u\n", qer->mbr.dl_high);
+    */
+    /*
+    printk("pkt size: %u bytes\n", skb->len);
+    printk("[Parameter] CIR: %llu bytes/sec, CBS: %llu bytes\n", qer->meter_param.cir, qer->meter_param.cbs);
+    printk("[Parameter] PIR: %llu bytes/sec, PBS: %llu bytes\n", qer->meter_param.pir, qer->meter_param.pbs);
+    printk("[Profile] CBS: %llu bytes\n", qer->meter_profile.cbs);
+    printk("[Profile] PBS: %llu bytes\n", qer->meter_profile.pbs);
+    printk("[Profile] CIR_PERIOD: %llu clks/each update, CIR_BYTES_PER_PERIOD: %llu bytes/each update\n", qer->meter_profile.cir_period, qer->meter_profile.cir_bytes_per_period);
+    printk("[Profile] PIR_PERIOD: %llu clks/each update, PIR_BYTES_PER_PERIOD: %llu bytes/each update\n", qer->meter_profile.pir_period, qer->meter_profile.pir_bytes_per_period);
+    printk("[Runtime] TC: %llu bytes available, TIME_TC: %llu clks\n", qer->meter_runtime.tc, qer->meter_runtime.time_tc);
+    printk("[Runtime] TP: %llu bytes available, TIME_TP: %llu clks\n", qer->meter_runtime.tp, qer->meter_runtime.time_tp);
+    */
+    
+    if(qer->qfi != 9){
+        pktinfo->color = trtcm_color_blind_check(&(qer->meter_profile), &(qer->meter_runtime), get_tsc(), skb->len);
+        if(pktinfo->color == 'G'){
+            pdr->green_pkt_cnt++;
+        }
+        else if(pktinfo->color == 'Y'){
+            pdr->yellow_pkt_cnt++;
+        }
+        else if(pktinfo->color == 'R'){
+            pdr->red_pkt_cnt++; 
+            return gtp5g_drop_skb_ipv4(skb, dev, pdr);
+        }
+        //else
+            //printk("[ERROR] Meter color number out of range\n") 
+    }
+    else{
+        pktinfo->color = 'W';
+        pdr->white_pkt_cnt++;
+    }
+    
+    wred_result = wred_processing(&(qer->queue_profile), &((qer->queue_profile).d_queue), skb, pktinfo);
+    
+    if(!wred_result)
+        return gtp5g_drop_skb_ipv4(skb, dev, pdr);
+    printk("dynamic queue length: %d\n", qer->queue_profile.d_queue.size);
+    
+    /*
+    d_queue_push(&((qer->queue_profile).d_queue), skb, pktinfo);
+    printk("1. dynamic queue length: %d\n", qer->queue_profile.d_queue.size);
+    if(pdr->green_pkt_cnt != 0 && pdr->green_pkt_cnt % 5 == 0)
+        d_queue_pop(&((qer->queue_profile).d_queue));
+    printk("2. dynamic queue length: %d\n", qer->queue_profile.d_queue.size);
+    */
+    printk("pkt count:\nGREEN: %llu, YELLOW: %llu, RED: %llu\n", pdr->green_pkt_cnt, pdr->yellow_pkt_cnt, pdr->red_pkt_cnt);
+
     pdr->dl_pkt_cnt++;
+    printk("pkt num: %llu\n", pdr->dl_pkt_cnt);
     pdr->dl_byte_cnt += skb->len;
     GTP5G_INF(NULL, "PDR (%u) DL_PKT_CNT (%llu) DL_BYTE_CNT (%llu)", pdr->id, pdr->dl_pkt_cnt, pdr->dl_byte_cnt);
 
@@ -907,8 +968,9 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
     //    GTP5G_ERR(dev, "%s:%d QER Rule found, id(%#x) qfi(%#x) TODO\n", 
     //            __func__, __LINE__, qer->id, qer->qfi);
     //}
-
+    
     far = pdr->far;
+    
     if (far) {
         // One and only one of the DROP, FORW and BUFF flags shall be set to 1.
         // The NOCP flag may only be set if the BUFF flag is set.

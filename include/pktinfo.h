@@ -4,7 +4,7 @@
 #include <linux/skbuff.h>
 #include <linux/net.h>
 
-#include "qer.h"
+#include "qos_meter.h"
 
 struct gtp5g_pktinfo {
     struct sock                   *sk;
@@ -15,6 +15,7 @@ struct gtp5g_pktinfo {
     u8                            qfi;
     struct net_device             *dev;
     __be16                        gtph_port;
+    char color; // W = white, R = red, Y = yellow, G = green
 };
 
 struct gtp5g_emark_pktinfo {

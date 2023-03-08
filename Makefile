@@ -36,6 +36,10 @@ CC += ${MY_CFLAGS}
 
 EXTRA_CFLAGS += -I $(PWD)/include
 
+5G_QOS_METER := src/qos_meter.o
+
+5G_CLK_FREQ := src/clk_freq.o
+
 5G_MOD := src/gtp5g.o
 
 5G_LOG	:= src/log.o
@@ -48,6 +52,12 @@ EXTRA_CFLAGS += -I $(PWD)/include
 			src/gtpu/link.o \
 			src/gtpu/net.o \
 			src/gtpu/pktinfo.o
+
+5G_STATIC_QUEUE := src/static_queue.o
+
+5G_DYNAMIC_QUEUE := src/dynamic_queue.o
+
+5G_WRED := src/wred.o
 
 5G_GENL := src/genl/genl.o \
 			src/genl/genl_version.o \
@@ -70,8 +80,13 @@ EXTRA_CFLAGS += -I $(PWD)/include
 
 # Build files
 obj-m += $(MODULE_NAME).o
+<<<<<<< HEAD
 $(MODULE_NAME)-objs := $(5G_MOD) $(5G_LOG) $(5G_UTIL) $(5G_GTPU) \
 						$(5G_GENL) $(5G_PFCP) $(5G_PROC)
+=======
+$(MODULE_NAME)-objs := $(5G_CLK_FREQ) $(5G_QOS_METER) $(5G_MOD) $(5G_LOG) $(5G_UTIL) $(5G_GTPU) \
+						$(5G_STATIC_QUEUE) $(5G_DYNAMIC_QUEUE) $(5G_WRED) $(5G_GENL) $(5G_PFCP) $(5G_PROC) 
+>>>>>>> 54297fb53558af4c19e21ef31a4e5553e5c6cf42
 
 default: module
 
