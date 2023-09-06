@@ -967,6 +967,15 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
     //            __func__, __LINE__, qer->id, qer->qfi);
     //}
 
+    for (int i = 0; i < pdr->qer_num; i++) {
+        struct qer *qer = find_qer_by_id(gtp, pdr->seid, pdr->qer_ids[i]);
+        if (qer) {
+            GTP5G_ERR(dev, "%s:%d QER Rule found, id(%#x) qfi(%#x) TODO\n", 
+               __func__, __LINE__, qer->id, qer->qfi);
+        }
+    }
+    printk(KERN_ERR "End of showing QER\n");
+
     far = rcu_dereference(pdr->far);
     if (far) {
         // One and only one of the DROP, FORW and BUFF flags shall be set to 1.
