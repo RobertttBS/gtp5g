@@ -943,7 +943,8 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
     struct far *far;
     //struct gtp5g_qer *qer;
     struct iphdr *iph;
-    u64 volume_mbqe = 0;
+    u64 volume_mbqe = 0, maxGBR = 0, delay = 0;
+    int i = 0;
 
     /* Read the IP destination address and resolve the PDR.
      * Prepend PDR header with TEI/TID from PDR.
@@ -961,20 +962,22 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
 
     /* TODO: QoS rule have to apply before apply FAR 
      * */
-    //qer = rcu_dereference(pdr->qer);
-    //if (qer) {
-    //    GTP5G_ERR(dev, "%s:%d QER Rule found, id(%#x) qfi(%#x) TODO\n", 
-    //            __func__, __LINE__, qer->id, qer->qfi);
-    //}
-
-    for (int i = 0; i < pdr->qer_num; i++) {
+	// Find the max gbr
+    for (i = 0; i < pdr->qer_num; i++) {
         struct qer *qer = find_qer_by_id(gtp, pdr->seid, pdr->qer_ids[i]);
         if (qer) {
-            GTP5G_ERR(dev, "%s:%d QER Rule found, id(%#x) qfi(%#x) TODO\n", 
-               __func__, __LINE__, qer->id, qer->qfi);
-        }
+            if (((((u64) qer->gbr.ul_high) << 8) + qer->gbr.ul_low) > maxGBR)
+                maxGBR = ((((u64) qer->gbr.ul_high) << 8) + qer->gbr.ul_low);
+            GTP5G_ERR(dev, "%s:%d QER Rule found, id(%#x) qfi(%#x) Mbr.ul %u Gbr.ul %u\n", 
+               __func__, __LINE__, qer->id, qer->qfi, (qer->mbr.ul_high << 8) + qer->mbr.ul_low, (qer->gbr.ul_high << 8) + qer->gbr.ul_low);
+        } else 
+            GTP5G_ERR(dev, "QER id %d not found\n", pdr->qer_ids[i]);
     }
-    printk(KERN_ERR "End of showing QER\n");
+
+    delay = ((u64)skb->len) * NSEC_PER_SEC / maxGBR;
+    skb->tstamp = ktime_get() + delay;
+
+    GTP5G_ERR(dev, "skb->tstamp %lld\n", skb->tstamp);
 
     far = rcu_dereference(pdr->far);
     if (far) {
