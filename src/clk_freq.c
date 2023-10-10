@@ -11,7 +11,7 @@ uint64_t get_tsc(void){ // TSC == Time Stamp Counter
     return (d << 32) | a;
 #else // ARM CPU
     uint32_t cc = 0;
-    __asm__ volatile ("mrc p15, 0, %0, c9, c13, 0":"=r" (cc));
+    __asm__ volatile ("msr cntv_ctl_el0,  %0" : : "r" (cc));
     return (uint64_t)cc; 
 #endif
 }
