@@ -72,10 +72,14 @@ EXTRA_CFLAGS += -I $(MAKEFILE_DIR)/include
 
 5G_PROC := src/proc.o
 
+5G_QOS_METER := src/qos_meter.o
+
+5G_CLK_FREQ := src/clk_freq.o
+
 # Build files
 obj-m += $(MODULE_NAME).o
 $(MODULE_NAME)-objs := $(5G_MOD) $(5G_LOG) $(5G_UTIL) $(5G_GTPU) \
-						$(5G_GENL) $(5G_PFCP) $(5G_PROC)
+						$(5G_GENL) $(5G_PFCP) $(5G_PROC) $(5G_QOS_METER) $(5G_CLK_FREQ)
 
 default: module
 

@@ -24,6 +24,7 @@
 #include "log.h"
 #include "api_version.h"
 #include "pktinfo.h"
+#include "clk_freq.h"
 
 /* used to compatible with api with/without seid */
 #define MSG_KOV_LEN 4
@@ -941,9 +942,10 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
     struct gtp5g_dev *gtp = netdev_priv(dev);
     struct pdr *pdr;
     struct far *far;
+    struct qer *qer;
     //struct gtp5g_qer *qer;
     struct iphdr *iph;
-    u64 volume_mbqe = 0, maxGBR = 0, delay = 0;
+    u64 volume_mbqe = 0, maxGBR = 0, delay = 0, minMBR = 0xffffffffffffffff;
     int i = 0;
 
     /* Read the IP destination address and resolve the PDR.
@@ -964,20 +966,29 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
      * */
 	// Find the max gbr
     for (i = 0; i < pdr->qer_num; i++) {
-        struct qer *qer = find_qer_by_id(gtp, pdr->seid, pdr->qer_ids[i]);
-        if (qer) {
-            if (((((u64) qer->gbr.ul_high) << 8) + qer->gbr.ul_low) > maxGBR)
-                maxGBR = ((((u64) qer->gbr.ul_high) << 8) + qer->gbr.ul_low);
+        struct qer *tmp_qer = find_qer_by_id(gtp, pdr->seid, pdr->qer_ids[i]);
+        if (tmp_qer) {
+            if (((((u64) tmp_qer->gbr.ul_high) << 8) + tmp_qer->gbr.ul_low) > maxGBR)
+                maxGBR = ((((u64) tmp_qer->gbr.ul_high) << 8) + tmp_qer->gbr.ul_low);
+            if (((((u64) tmp_qer->mbr.ul_high) << 8) + tmp_qer->mbr.ul_low) > minMBR) {
+                minMBR = ((((u64) tmp_qer->mbr.ul_high) << 8) + tmp_qer->mbr.ul_low);
+                qer = tmp_qer;
+            }
             GTP5G_ERR(dev, "%s:%d QER Rule found, id(%#x) qfi(%#x) Mbr.ul %u Gbr.ul %u\n", 
-               __func__, __LINE__, qer->id, qer->qfi, (qer->mbr.ul_high << 8) + qer->mbr.ul_low, (qer->gbr.ul_high << 8) + qer->gbr.ul_low);
+               __func__, __LINE__, tmp_qer->id, tmp_qer->qfi, (tmp_qer->mbr.ul_high << 8) + tmp_qer->mbr.ul_low, (tmp_qer->gbr.ul_high << 8) + tmp_qer->gbr.ul_low);
         } else 
             GTP5G_ERR(dev, "QER id %d not found\n", pdr->qer_ids[i]);
     }
 
-    delay = ((u64)skb->len) * NSEC_PER_SEC / maxGBR;
-    skb->tstamp = ktime_get() + delay;
-
-    GTP5G_ERR(dev, "skb->tstamp %lld\n", skb->tstamp);
+    if (maxGBR != 0) {
+        delay = ((u64)skb->len) * NSEC_PER_SEC / maxGBR;
+        skb->tstamp = ktime_get() + delay;
+    }
+    if (minMBR != 0xffffffffffffffff) {
+        char color = trtcm_color_blind_check(&(qer->meter_profile), &(qer->meter_runtime), get_tsc(), skb->len);
+        if (color == 'R')
+            return gtp5g_drop_skb_ipv4(skb, dev, pdr);
+    }
 
     far = rcu_dereference(pdr->far);
     if (far) {
