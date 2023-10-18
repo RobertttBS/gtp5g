@@ -336,8 +336,7 @@ static int qer_fill(struct qer *qer, struct gtp5g_dev *gtp, struct genl_info *in
     
     // For color marking initialization
     config = trtcm_param_config(&(qer->meter_param), qer->gbr.dl_high, qer->gbr.dl_low, qer->mbr.dl_high, qer->mbr.dl_low);
-    config = trtcm_profile_config(&(qer->meter_param), &(qer->meter_profile));
-    config = trtcm_runtime_config(&(qer->meter_profile), &(qer->meter_runtime));
+    config = trtcm_runtime_config(&(qer->meter_param), &(qer->meter_runtime));
 
     /* Update PDRs which has not linked to this QER */
     qer_update(qer, gtp);

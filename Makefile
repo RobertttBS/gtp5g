@@ -33,7 +33,7 @@ else
 	DEPMOD := true
 endif
 
-MY_CFLAGS += -g -DDEBUG $(RHEL8FLAG)
+MY_CFLAGS += -g -DDEBUG $(RHEL8FLAG) -mfpmath=387
 # MY_CFLAGS += -DMATCH_IP # match IP address(in F-TEID) or not
 EXTRA_CFLAGS += -Wno-misleading-indentation -Wuninitialized
 CC += ${MY_CFLAGS}
@@ -74,12 +74,10 @@ EXTRA_CFLAGS += -I $(MAKEFILE_DIR)/include
 
 5G_QOS_METER := src/qos_meter.o
 
-5G_CLK_FREQ := src/clk_freq.o
-
 # Build files
 obj-m += $(MODULE_NAME).o
 $(MODULE_NAME)-objs := $(5G_MOD) $(5G_LOG) $(5G_UTIL) $(5G_GTPU) \
-						$(5G_GENL) $(5G_PFCP) $(5G_PROC) $(5G_QOS_METER) $(5G_CLK_FREQ)
+						$(5G_GENL) $(5G_PFCP) $(5G_PROC) $(5G_QOS_METER)
 
 default: module
 

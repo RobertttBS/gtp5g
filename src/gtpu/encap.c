@@ -24,7 +24,6 @@
 #include "log.h"
 #include "api_version.h"
 #include "pktinfo.h"
-#include "clk_freq.h"
 
 /* used to compatible with api with/without seid */
 #define MSG_KOV_LEN 4
@@ -970,24 +969,29 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
         if (tmp_qer) {
             if (((((u64) tmp_qer->gbr.ul_high) << 8) + tmp_qer->gbr.ul_low) > maxGBR)
                 maxGBR = ((((u64) tmp_qer->gbr.ul_high) << 8) + tmp_qer->gbr.ul_low);
-            if (((((u64) tmp_qer->mbr.ul_high) << 8) + tmp_qer->mbr.ul_low) > minMBR) {
-                minMBR = ((((u64) tmp_qer->mbr.ul_high) << 8) + tmp_qer->mbr.ul_low);
+            if (((((u64) tmp_qer->mbr.dl_high) << 8) + tmp_qer->mbr.dl_low) < minMBR) {
+                minMBR = ((((u64) tmp_qer->mbr.dl_high) << 8) + tmp_qer->mbr.dl_low);
                 qer = tmp_qer;
             }
-            GTP5G_ERR(dev, "%s:%d QER Rule found, id(%#x) qfi(%#x) Mbr.ul %u Gbr.ul %u\n", 
-               __func__, __LINE__, tmp_qer->id, tmp_qer->qfi, (tmp_qer->mbr.ul_high << 8) + tmp_qer->mbr.ul_low, (tmp_qer->gbr.ul_high << 8) + tmp_qer->gbr.ul_low);
+            GTP5G_ERR(dev, "%s:%d QER Rule found, id(%#x) qfi(%#x) Mbr.dl %u Gbr.ul %u\n", 
+               __func__, __LINE__, tmp_qer->id, tmp_qer->qfi, (tmp_qer->mbr.dl_high << 8) + tmp_qer->mbr.dl_low, (tmp_qer->gbr.ul_high << 8) + tmp_qer->gbr.ul_low);
         } else 
             GTP5G_ERR(dev, "QER id %d not found\n", pdr->qer_ids[i]);
     }
 
     if (maxGBR != 0) {
+        // GTP5G_ERR(dev, "GBR found, set EDT\n");
         delay = ((u64)skb->len) * NSEC_PER_SEC / maxGBR;
         skb->tstamp = ktime_get() + delay;
     }
+
     if (minMBR != 0xffffffffffffffff) {
-        char color = trtcm_color_blind_check(&(qer->meter_profile), &(qer->meter_runtime), get_tsc(), skb->len);
-        if (color == 'R')
+        // GTP5G_ERR(dev, "MBR found: %llu, check color\n", minMBR);
+        // GTP5G_ERR(dev, "Color: %c\n", trtcm_color_blind_check(&(qer->meter_param), &(qer->meter_runtime), ktime_get(), skb->len));
+        if (trtcm_color_blind_check(&(qer->meter_param), &(qer->meter_runtime), ktime_get(), skb->len) == 'R') {
+            GTP5G_ERR(dev, "Color: Red, drop the packet\n");
             return gtp5g_drop_skb_ipv4(skb, dev, pdr);
+        }
     }
 
     far = rcu_dereference(pdr->far);

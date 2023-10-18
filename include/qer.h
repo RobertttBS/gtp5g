@@ -35,7 +35,6 @@ struct qer {
     struct rcu_head rcu_head;
 
     struct trtcm_param meter_param;
-    struct trtcm_profile meter_profile;
     struct trtcm_runtime meter_runtime;
 };
 
