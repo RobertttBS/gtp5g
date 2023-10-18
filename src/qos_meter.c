@@ -32,9 +32,11 @@ int trtcm_runtime_config(struct trtcm_param *param, struct trtcm_runtime *runtim
     runtime->tc = param->cbs; // Initialize token bucket
     runtime->tp = param->pbs; // Initialize token bucket
     runtime->remainder = 0;
+    runtime->remainder_bits = 0;
     return 0;
 }
 
+/* Using / and % operator to calculate*/
 char trtcm_color_blind_check(struct trtcm_param *param, struct trtcm_runtime *runtime, uint64_t time_cur, uint64_t pkt_len){
     uint64_t time_diff, tp_cur, p_rate_high, p_rate_low, p_bits;
     // uint64_t tc_cur, c_rate_high, c_rate_low, c_bits;
@@ -55,13 +57,64 @@ char trtcm_color_blind_check(struct trtcm_param *param, struct trtcm_runtime *ru
     p_rate_low = param->pir % 1000000000;
     
     runtime->remainder += time_diff * p_rate_low;
-    p_bits = time_diff * p_rate_high + runtime->remainder / 1000000000;
+    p_bits = time_diff * p_rate_high + runtime->remainder / 1000000000 + runtime->remainder_bits;
     runtime->remainder = runtime->remainder % 1000000000;
+    runtime->remainder_bits = p_bits % 8;
     tp_cur = runtime->tp + (p_bits >> 3);
     if(tp_cur > param->pbs)
         tp_cur = param->pbs;
-    // printk("time_diff: %llu, c_bits: %llu, tc_cur: %llu, p_bits: %llu, tp_cur: %llu\n", time_diff, c_bits, tc_cur, p_bits, tp_cur);
+    // printk("rate: %llu, time_diff: %llu, p_bits: %llu, tp: %llu, tp_cur: %llu, remainder: %llu, remain_bits: %u\n", param->pir, time_diff, p_bits, runtime->tp, tp_cur, runtime->remainder, runtime->remainder_bits);
+
+
+    // Color marking
+    if(tp_cur < pkt_len){
+        // runtime->tc = tc_cur;
+        runtime->tp = tp_cur;
+        // printk("Red\n");
+        return 'R';
+    }
+    // if(tc_cur < pkt_len){
+    //     runtime->tc = tc_cur;
+    //     runtime->tp = tp_cur - pkt_len;
+    //     // printk("Yellow\n");
+    //     return 'Y';
+    // }
+    // runtime->tc = tc_cur - pkt_len;
+    runtime->tp = tp_cur - pkt_len;
+    // printk("Green\n");
+    return 'G';
+}
+
+/* Using bitwise operator to speedup calculation, but there will be 7% error*/
+char trtcm_color_blind_check_bitwise(struct trtcm_param *param, struct trtcm_runtime *runtime, uint64_t time_cur, uint64_t pkt_len){
+    uint64_t time_diff, tp_cur, p_rate_high, p_rate_low, p_bits;
+    // uint64_t tc_cur, c_rate_high, c_rate_low, c_bits;
+    // Update token bucket
+    time_diff = time_cur - runtime->l_time;
+    runtime->l_time = time_cur; // Update latest update time
+    // printk("cir: %llu pir: %llu\n", param->cir, param->pir);
     
+    // Abort the cir, since we just need to implement MBR
+    // c_rate_low = param->cir % 1000000000;
+    // c_rate_high = param->cir / 1000000000;
+    // c_bits = time_diff * c_rate_high + (time_diff * c_rate_low) / 1000000000;
+    // tc_cur = runtime->tc + (c_bits >> 3);
+    // if(tc_cur > param->cbs)
+    //     tc_cur = param->cbs;
+
+    p_rate_high = param->pir >> 30;
+    p_rate_low = param->pir & ((1ULL << 30) - 1);
+    
+    runtime->remainder += time_diff * p_rate_low;
+    p_bits = time_diff * p_rate_high + (runtime->remainder >> 30) + runtime->remainder_bits;
+    runtime->remainder = runtime->remainder & ((1ULL << 30) - 1);
+    runtime->remainder_bits = p_bits & 7;
+    tp_cur = runtime->tp + (p_bits >> 3);
+    if(tp_cur > param->pbs)
+        tp_cur = param->pbs;
+    // printk("rate: %llu, time_diff: %llu, p_bits: %llu, tp: %llu, tp_cur: %llu, remainder: %llu, remain_bits: %u\n", param->pir, time_diff, p_bits, runtime->tp, tp_cur, runtime->remainder, runtime->remainder_bits);
+
+
 
     // Color marking
     if(tp_cur < pkt_len){

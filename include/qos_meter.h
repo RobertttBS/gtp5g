@@ -23,9 +23,11 @@ struct trtcm_runtime{
     uint64_t tp;         // Number of bytes available in P token bucket now
     uint64_t l_time;    // Latest update time of token buckets
     uint64_t remainder; // Remainder of the last update(`/ 1000000000` or `>> 30`), for precision
+    uint32_t remainder_bits; // Remainder of the bits of the last update
 };
 
 extern int trtcm_param_config(struct trtcm_param *, uint32_t, uint8_t, uint32_t, uint8_t);
 extern int trtcm_runtime_config(struct trtcm_param *, struct trtcm_runtime *);
 extern char trtcm_color_blind_check(struct trtcm_param *, struct trtcm_runtime *, uint64_t, uint64_t);
+extern char trtcm_color_blind_check_bitwise(struct trtcm_param *, struct trtcm_runtime *, uint64_t, uint64_t);
 #endif // __QOS_METER_H__
