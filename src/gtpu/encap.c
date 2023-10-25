@@ -994,7 +994,7 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
         // }
 
         /* bitwise version of trTCM, 7% error*/
-        if (trtcm_color_blind_check_bitwise(&(qer->meter_param), &(qer->meter_runtime), ktime_get(), skb->len) == 'R') {
+        if (trtcm_color_blind_check_bitwise(&(qer->meter_param), &(qer->meter_runtime), ktime_get(), skb->data_len) == 'R') {
             // GTP5G_ERR(dev, "Color: Red, drop the packet\n");
             return gtp5g_drop_skb_ipv4(skb, dev, pdr);
         }
