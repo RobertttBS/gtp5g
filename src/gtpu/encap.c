@@ -981,8 +981,11 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
     }
 
     if (maxGBR != 0) {
-        delay = ((u64)skb->len) * NSEC_PER_SEC / maxGBR;
+        delay = ((u64)skb->len << 3) * NSEC_PER_SEC / maxGBR;
         skb->tstamp = ktime_get() + delay;
+        printk("delay: %llu, packet length: %d, GBR: %llu, kb->tstamp %llu\n", delay, skb->len, maxGBR, skb->tstamp);
+    } else {
+        skb->tstamp = ktime_get() + 100000000;
     }
     if (minMBR != 0xffffffffffffffff) {
         char color = trtcm_color_blind_check(&(qer->meter_profile), &(qer->meter_runtime), get_tsc(), skb->len);
