@@ -16,6 +16,23 @@ git clone https://github.com/free5gc/gtp5g.git && cd gtp5g
 make clean && make
 ```
 
+* If we are using linux kernel >= 6, we have to uncommand the code in genl.c file `.resv_start_op = GTP5G_ATTR_MAX,`.
+```
+struct genl_family gtp5g_genl_family __ro_after_init = {
+    .name       = "gtp5g",
+    .version    = 0,
+    .hdrsize    = 0,
+    .maxattr    = GTP5G_ATTR_MAX,
+    .netnsok    = true,
+    .module     = THIS_MODULE,
+    .ops        = gtp5g_genl_ops,
+    .n_ops      = ARRAY_SIZE(gtp5g_genl_ops),
+    .mcgrps     = gtp5g_genl_mcgrps,
+    .n_mcgrps   = ARRAY_SIZE(gtp5g_genl_mcgrps),
+    // .resv_start_op = GTP5G_ATTR_MAX,
+};
+```
+
 ### Install kernel module
 Install the module to the system and load automatically at boot
 ```
