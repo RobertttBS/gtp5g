@@ -945,6 +945,7 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
     //struct gtp5g_qer *qer;
     struct iphdr *iph;
     u64 volume_mbqe = 0, maxGBR = 0, delay = 0, minMBR = 0xffffffffffffffff;
+    uint64_t now;
     int i = 0;
 
     /* Read the IP destination address and resolve the PDR.
@@ -973,31 +974,33 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
                 minMBR = ((((u64) tmp_qer->mbr.dl_high) << 8) + tmp_qer->mbr.dl_low);
                 qer = tmp_qer;
             }
-            // GTP5G_ERR(dev, "%s:%d QER Rule found, id(%#x) qfi(%#x) Mbr.dl %u Gbr.ul %u\n", 
-            //    __func__, __LINE__, tmp_qer->id, tmp_qer->qfi, (tmp_qer->mbr.dl_high << 8) + tmp_qer->mbr.dl_low, (tmp_qer->gbr.ul_high << 8) + tmp_qer->gbr.ul_low);
         } else 
             GTP5G_ERR(dev, "QER id %d not found\n", pdr->qer_ids[i]);
     }
 
+    now = ktime_get_ns();
+
     if (maxGBR != 0) {
-        // GTP5G_ERR(dev, "GBR found, set EDT\n");
-        delay = ((u64)skb->len) * NSEC_PER_SEC / maxGBR;
-        skb->tstamp = ktime_get() + delay;
+        
+        delay = ((u64)skb->len << 3) * NSEC_PER_SEC / maxGBR;
+        
+        skb->tstamp = now + delay;
+        // GTP5G_ERR(dev, "EDT: %lld, pkt_len: %d bytes, maxGBR: %lld\n", skb->tstamp, skb->len, maxGBR);
+    } else {
+        skb->tstamp = now + 500000000;
+        // GTP5G_ERR(dev, "EDT: %lld, pkt_len: %d bytes, no GBR\n", skb->tstamp, skb->len);
     }
 
     if (minMBR != 0xffffffffffffffff) {
-        // GTP5G_ERR(dev, "MBR found: %llu, check color\n", minMBR);
-        // GTP5G_ERR(dev, "Color: %c\n", trtcm_color_blind_check(&(qer->meter_param), &(qer->meter_runtime), ktime_get(), skb->len));
-        // if (trtcm_color_blind_check(&(qer->meter_param), &(qer->meter_runtime), ktime_get(), skb->len) == 'R') {
-        //     // GTP5G_ERR(dev, "Color: Red, drop the packet\n");
-        //     return gtp5g_drop_skb_ipv4(skb, dev, pdr);
-        // }
-
-        /* bitwise version of trTCM, 7% error*/
-        if (trtcm_color_blind_check_bitwise(&(qer->meter_param), &(qer->meter_runtime), ktime_get(), skb->len) == 'R') {
+         if (trtcm_color_blind_check(&(qer->meter_param), &(qer->meter_runtime), now, skb->len) == 'R') {
             // GTP5G_ERR(dev, "Color: Red, drop the packet\n");
             return gtp5g_drop_skb_ipv4(skb, dev, pdr);
         }
+        /* bitwise version of trTCM, 7% error*/
+        // if (trtcm_color_blind_check_bitwise(&(qer->meter_param), &(qer->meter_runtime), ktime_get(), skb->len) == 'R') {
+        //     // GTP5G_ERR(dev, "Color: Red, drop the packet\n");
+        //     return gtp5g_drop_skb_ipv4(skb, dev, pdr);
+        // }
     }
 
     far = rcu_dereference(pdr->far);

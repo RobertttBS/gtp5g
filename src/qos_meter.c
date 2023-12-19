@@ -112,9 +112,7 @@ char trtcm_color_blind_check_bitwise(struct trtcm_param *param, struct trtcm_run
     tp_cur = runtime->tp + (p_bits >> 3);
     if(tp_cur > param->pbs)
         tp_cur = param->pbs;
-    // printk("rate: %llu, time_diff: %llu, p_bits: %llu, tp: %llu, tp_cur: %llu, remainder: %llu, remain_bits: %u\n", param->pir, time_diff, p_bits, runtime->tp, tp_cur, runtime->remainder, runtime->remainder_bits);
-
-
+    printk("rate: %llu, time_diff: %llu, p_bits: %llu, tp: %llu, tp_cur: %llu, pkt_len: %lld\n", param->pir, time_diff, p_bits, runtime->tp, tp_cur, pkt_len);
 
     // Color marking
     if(tp_cur < pkt_len){
