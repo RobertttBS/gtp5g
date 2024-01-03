@@ -981,8 +981,9 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
     }
 
     if (maxGBR != 0) {
+        // delay only store the delay, eBPF program at TC will setup time stamp according to delay
         delay = ((u64)skb->len) * NSEC_PER_SEC / maxGBR;
-        skb->tstamp = ktime_get() + delay;
+        skb->priority = delay;
     }
     if (minMBR != 0xffffffffffffffff) {
         char color = trtcm_color_blind_check(&(qer->meter_profile), &(qer->meter_runtime), get_tsc(), skb->len);
