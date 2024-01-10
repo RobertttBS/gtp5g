@@ -239,6 +239,7 @@ void gtp5g_fwd_emark_skb_ipv4(struct sk_buff *skb,
 
 void gtp5g_xmit_skb_ipv4(struct sk_buff *skb, struct gtp5g_pktinfo *pktinfo)
 {
+    // printk("In gtp5g_xmit_skb_ipv4(): priority: %u\n", skb->priority);
     udp_tunnel_xmit_skb(pktinfo->rt, 
         pktinfo->sk,
         skb,

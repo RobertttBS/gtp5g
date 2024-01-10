@@ -3,6 +3,7 @@
 #include <linux/rculist.h>
 #include <linux/udp.h>
 #include <linux/gtp.h>
+#include <linux/skbuff.h>
 
 #include <net/ip.h>
 #include <net/udp.h>
@@ -947,6 +948,7 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
     u64 volume_mbqe = 0, maxGBR = 0, delay = 0, minMBR = 0xffffffffffffffff;
     uint64_t now;
     int i = 0;
+    char color;
 
     /* Read the IP destination address and resolve the PDR.
      * Prepend PDR header with TEI/TID from PDR.
@@ -978,30 +980,36 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
             GTP5G_ERR(dev, "QER id %d not found\n", pdr->qer_ids[i]);
     }
 
+    if (maxGBR != 0)
+        delay = ((u64)skb->len << 3) * NSEC_PER_SEC / maxGBR;
+    else
+        delay = 500000000;
+    // skb->priority = delay;
+
     now = ktime_get_ns();
 
-    if (maxGBR != 0) {
-        
-        delay = ((u64)skb->len << 3) * NSEC_PER_SEC / maxGBR;
-        
-        skb->tstamp = now + delay;
-        // GTP5G_ERR(dev, "EDT: %lld, pkt_len: %d bytes, maxGBR: %lld\n", skb->tstamp, skb->len, maxGBR);
+    if (minMBR != 0xffffffffffffffff) {
+        color = trtcm_color_blind_check(&(qer->meter_param), &(qer->meter_runtime), now, skb->len);
+        // if (color == 'G')
+        //     skb->priority = 0;
+        // else if (color == 'Y')
+        //     skb->priority = 1;
+        // GTP5G_ERR(dev, "MBR %llu, Color: %c\n", minMBR, color);
+        if (color == 'R') {
+            GTP5G_ERR(dev, "MBR %llu, Color: %c\n", minMBR, color);
+            return gtp5g_drop_skb_ipv4(skb, dev, pdr);
+        } else if (color == 'G') {
+            skb->priority = 60;
+        } else {
+            skb->priority = 50;
+        }
     } else {
-        skb->tstamp = now + 500000000;
-        // GTP5G_ERR(dev, "EDT: %lld, pkt_len: %d bytes, no GBR\n", skb->tstamp, skb->len);
+        skb->priority = 0;
     }
 
-    if (minMBR != 0xffffffffffffffff) {
-         if (trtcm_color_blind_check(&(qer->meter_param), &(qer->meter_runtime), now, skb->len) == 'R') {
-            // GTP5G_ERR(dev, "Color: Red, drop the packet\n");
-            return gtp5g_drop_skb_ipv4(skb, dev, pdr);
-        }
-        /* bitwise version of trTCM, 7% error*/
-        // if (trtcm_color_blind_check_bitwise(&(qer->meter_param), &(qer->meter_runtime), ktime_get(), skb->len) == 'R') {
-        //     // GTP5G_ERR(dev, "Color: Red, drop the packet\n");
-        //     return gtp5g_drop_skb_ipv4(skb, dev, pdr);
-        // }
-    }
+    // // test skb->priority for tc
+    // skb->priority = now & 0x3;
+    // printk("skb->priority %u\n", skb->priority);
 
     far = rcu_dereference(pdr->far);
     if (far) {

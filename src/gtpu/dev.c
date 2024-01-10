@@ -94,8 +94,11 @@ static netdev_tx_t gtp5g_dev_xmit(struct sk_buff *skb, struct net_device *dev)
     if (ret < 0)
         goto tx_err;
 
-    if (ret == FAR_ACTION_FORW)
+    if (ret == FAR_ACTION_FORW) {
+        // Enqueue the skb into dev
         gtp5g_xmit_skb_ipv4(skb, &pktinfo);
+    }
+        
 
     return NETDEV_TX_OK;
 

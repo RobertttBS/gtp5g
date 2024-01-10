@@ -4,6 +4,11 @@
 #include <linux/netdevice.h>
 #include <linux/rculist.h>
 #include <linux/socket.h>
+#include <linux/rbtree.h>
+
+struct sched_data {
+    struct rb_root_cached head;
+};
 
 struct gtp5g_dev {
     struct list_head list;
@@ -28,6 +33,10 @@ struct gtp5g_dev {
     
     /* Used by proc interface */
     struct list_head proc_list;
+
+    /* ETF RB tree*/
+    struct sched_data q;
+
 };
 
 extern const struct net_device_ops gtp5g_netdev_ops;
