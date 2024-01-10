@@ -996,7 +996,6 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
         //     skb->priority = 1;
         // GTP5G_ERR(dev, "MBR %llu, Color: %c\n", minMBR, color);
         if (color == 'R') {
-            GTP5G_ERR(dev, "MBR %llu, Color: %c\n", minMBR, color);
             return gtp5g_drop_skb_ipv4(skb, dev, pdr);
         } else if (color == 'G') {
             skb->priority = 60;

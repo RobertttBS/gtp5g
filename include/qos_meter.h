@@ -31,5 +31,4 @@ struct trtcm_runtime {
 extern int trtcm_param_config(struct trtcm_param *, uint32_t, uint8_t, uint32_t, uint8_t);
 extern int trtcm_runtime_config(struct trtcm_param *, struct trtcm_runtime *);
 extern char trtcm_color_blind_check(struct trtcm_param *, struct trtcm_runtime *, uint64_t, uint64_t);
-extern char trtcm_color_blind_check_bitwise(struct trtcm_param *, struct trtcm_runtime *, uint64_t, uint64_t);
 #endif // __QOS_METER_H__
