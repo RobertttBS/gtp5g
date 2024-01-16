@@ -966,49 +966,36 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
 
     /* TODO: QoS rule have to apply before apply FAR 
      * */
-	// Find the max gbr
+	// Find QER (Suppose that one PDR will only map to one QER)
     for (i = 0; i < pdr->qer_num; i++) {
-        struct qer *tmp_qer = find_qer_by_id(gtp, pdr->seid, pdr->qer_ids[i]);
-        if (tmp_qer) {
-            if (((((u64) tmp_qer->gbr.ul_high) << 8) + tmp_qer->gbr.ul_low) > maxGBR)
-                maxGBR = ((((u64) tmp_qer->gbr.ul_high) << 8) + tmp_qer->gbr.ul_low);
-            if (((((u64) tmp_qer->mbr.dl_high) << 8) + tmp_qer->mbr.dl_low) < minMBR) {
-                minMBR = ((((u64) tmp_qer->mbr.dl_high) << 8) + tmp_qer->mbr.dl_low);
-                qer = tmp_qer;
-            }
-        } else 
-            GTP5G_ERR(dev, "QER id %d not found\n", pdr->qer_ids[i]);
+        qer = find_qer_by_id(gtp, pdr->seid, pdr->qer_ids[i]);
+        if (qer)
+            break;
     }
-
-    if (maxGBR != 0)
+    if (qer) {
+        // TODO: set up GBR
+        maxGBR = ((((u64) qer->gbr.ul_high) << 8) + qer->gbr.ul_low);
+        // EDT delay computation
         delay = ((u64)skb->len << 3) * NSEC_PER_SEC / maxGBR;
-    else
-        delay = 500000000;
-    // skb->priority = delay;
 
-    now = ktime_get_ns();
-
-    if (minMBR != 0xffffffffffffffff) {
+        // setup MBR
+        minMBR = ((((u64) qer->mbr.dl_high) << 8) + qer->mbr.dl_low);
+        // trTCM metering
+        now = ktime_get_ns();
         color = trtcm_color_blind_check(&(qer->meter_param), &(qer->meter_runtime), now, skb->len);
-        // if (color == 'G')
-        //     skb->priority = 0;
-        // else if (color == 'Y')
-        //     skb->priority = 1;
-        // GTP5G_ERR(dev, "MBR %llu, Color: %c\n", minMBR, color);
-        if (color == 'R') {
+        if (color == 'R')
             return gtp5g_drop_skb_ipv4(skb, dev, pdr);
-        } else if (color == 'G') {
+        else if (color == 'G')
             skb->priority = 60;
-        } else {
+        else
             skb->priority = 50;
-        }
     } else {
+        // setup default delay
+        delay = 500000000;
+
+        // setup default priority
         skb->priority = 0;
     }
-
-    // // test skb->priority for tc
-    // skb->priority = now & 0x3;
-    // printk("skb->priority %u\n", skb->priority);
 
     far = rcu_dereference(pdr->far);
     if (far) {
