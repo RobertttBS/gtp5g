@@ -691,6 +691,9 @@ static int gtp5g_rx(struct pdr *pdr, struct sk_buff *skb,
     u64 volume_mbqe = 0;
     struct far *far = rcu_dereference(pdr->far);
     // struct qer *qer = rcu_dereference(pdr->qer);
+    struct qer *qer = pdr->qer;
+    uint64_t maxGBR, minMBR, now, delay;
+    char color;
 
     if (!far) {
         GTP5G_ERR(pdr->dev, "FAR not exists for PDR(%u)\n", pdr->id);
@@ -698,10 +701,26 @@ static int gtp5g_rx(struct pdr *pdr, struct sk_buff *skb,
     }
 
     //TODO: QER
-    //if (qer) {
-    //    printk_ratelimited("%s:%d QER Rule found, id(%#x) qfi(%#x)\n", __func__, __LINE__,
-    //        qer->id, qer->qfi);
-    //}
+    if (qer) {
+        // TODO: set up GBR
+        maxGBR = ((((u64) qer->gbr.ul_high) << 8) + qer->gbr.ul_low) * 1000;
+        // EDT delay computation
+        delay = div64_ul(skb->len << 3, maxGBR);
+        // delay = ((u64)skb->len << 3) * NSEC_PER_SEC / maxGBR;
+
+        // setup MBR
+        minMBR = ((((u64) qer->mbr.ul_high) << 8) + qer->mbr.ul_low) * 1000;
+        // trTCM metering
+        now = ktime_get_ns();
+        color = trtcm_color_blind_check(&(qer->ul_policer.param), &(qer->ul_policer.runtime), now, skb->len);
+        if (color == 'R') {
+            rt = gtp5g_drop_skb_encap(skb, pdr->dev, pdr);
+            goto out;
+        } else if (color == 'G')
+            skb->priority = 60;
+        else
+            skb->priority = 50;
+    }
 
     // TODO: not reading the value of outer_header_removal now,
     // just check if it is assigned.
@@ -972,8 +991,6 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
         // EDT delay computation
         delay = div64_ul(skb->len << 3, maxGBR);
         // delay = ((u64)skb->len << 3) * NSEC_PER_SEC / maxGBR;
-        if (delay != ((u64)skb->len << 3) * NSEC_PER_SEC / maxGBR)
-            printk("div64_ul != ((u64)skb->len << 3) * NSEC_PER_SEC / maxGBR\n");
 
         // setup MBR
         minMBR = ((((u64) qer->mbr.dl_high) << 8) + qer->mbr.dl_low) * 1000;
