@@ -947,7 +947,6 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
     struct iphdr *iph;
     u64 volume_mbqe = 0, maxGBR = 0, delay = 0, minMBR = 0xffffffffffffffff;
     uint64_t now;
-    int i = 0;
     char color;
 
     /* Read the IP destination address and resolve the PDR.
@@ -966,17 +965,15 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
 
     /* TODO: QoS rule have to apply before apply FAR 
      * */
-	// Find QER (Suppose that one PDR will only map to one QER)
-    for (i = 0; i < pdr->qer_num; i++) {
-        qer = find_qer_by_id(gtp, pdr->seid, pdr->qer_ids[i]);
-        if (qer)
-            break;
-    }
+    qer = pdr->qer;
     if (qer) {
         // TODO: set up GBR
-        maxGBR = ((((u64) qer->gbr.ul_high) << 8) + qer->gbr.ul_low);
+        maxGBR = ((((u64) qer->gbr.dl_high) << 8) + qer->gbr.dl_low);
         // EDT delay computation
-        delay = ((u64)skb->len << 3) * NSEC_PER_SEC / maxGBR;
+        delay = div64_ul(skb->len << 3, maxGBR);
+        // delay = ((u64)skb->len << 3) * NSEC_PER_SEC / maxGBR;
+        if (delay != ((u64)skb->len << 3) * NSEC_PER_SEC / maxGBR)
+            printk("div64_ul != ((u64)skb->len << 3) * NSEC_PER_SEC / maxGBR\n");
 
         // setup MBR
         minMBR = ((((u64) qer->mbr.dl_high) << 8) + qer->mbr.dl_low);
@@ -992,7 +989,6 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
     } else {
         // setup default delay
         delay = 500000000;
-
         // setup default priority
         skb->priority = 0;
     }
