@@ -968,7 +968,7 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
     qer = pdr->qer;
     if (qer) {
         // TODO: set up GBR
-        maxGBR = ((((u64) qer->gbr.dl_high) << 8) + qer->gbr.dl_low);
+        maxGBR = ((((u64) qer->gbr.dl_high) << 8) + qer->gbr.dl_low) * 1000;
         // EDT delay computation
         delay = div64_ul(skb->len << 3, maxGBR);
         // delay = ((u64)skb->len << 3) * NSEC_PER_SEC / maxGBR;
@@ -976,10 +976,10 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
             printk("div64_ul != ((u64)skb->len << 3) * NSEC_PER_SEC / maxGBR\n");
 
         // setup MBR
-        minMBR = ((((u64) qer->mbr.dl_high) << 8) + qer->mbr.dl_low);
+        minMBR = ((((u64) qer->mbr.dl_high) << 8) + qer->mbr.dl_low) * 1000;
         // trTCM metering
         now = ktime_get_ns();
-        color = trtcm_color_blind_check(&(qer->meter_param), &(qer->meter_runtime), now, skb->len);
+        color = trtcm_color_blind_check(&(qer->dl_policer.param), &(qer->dl_policer.runtime), now, skb->len);
         if (color == 'R')
             return gtp5g_drop_skb_ipv4(skb, dev, pdr);
         else if (color == 'G')

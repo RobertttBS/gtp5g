@@ -15,8 +15,8 @@ int trtcm_param_config(struct trtcm_param *parameter, uint32_t gbr_high, uint8_t
     if(parameter == NULL)
         return -1;
     
-    parameter->cir = ((((uint64_t) gbr_high) << 8) + gbr_low) << 3; // Convert to bits per second, then turn Kbps to bps
-    parameter->pir = ((((uint64_t) mbr_high) << 8) + mbr_low) << 3; // Convert to bits per second, then turn Kbps to bps
+    parameter->cir = ((((uint64_t) gbr_high) << 8) + gbr_low) * 1000; // Convert to bits per second, then turn Kbps to bps
+    parameter->pir = ((((uint64_t) mbr_high) << 8) + mbr_low) * 1000; // Convert to bits per second, then turn Kbps to bps
     parameter->pir -= parameter->cir;
     parameter->cbs = MTU * 20;
     parameter->pbs = MTU * 20;

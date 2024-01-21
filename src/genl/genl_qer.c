@@ -335,8 +335,10 @@ static int qer_fill(struct qer *qer, struct gtp5g_dev *gtp, struct genl_info *in
         qer->rcsr = nla_get_u8(info->attrs[GTP5G_QER_RCSR]);
     
     // For color marking initialization
-    config = trtcm_param_config(&(qer->meter_param), qer->gbr.dl_high, qer->gbr.dl_low, qer->mbr.dl_high, qer->mbr.dl_low);
-    config = trtcm_runtime_config(&(qer->meter_param), &(qer->meter_runtime));
+    config = trtcm_param_config(&(qer->dl_policer.param), qer->gbr.dl_high, qer->gbr.dl_low, qer->mbr.dl_high, qer->mbr.dl_low);
+    config = trtcm_param_config(&(qer->ul_policer.param), qer->gbr.ul_high, qer->gbr.ul_low, qer->mbr.ul_high, qer->mbr.ul_low);
+    config = trtcm_runtime_config(&(qer->dl_policer.param), &(qer->dl_policer.runtime));
+    config = trtcm_runtime_config(&(qer->ul_policer.param), &(qer->ul_policer.runtime));
 
     /* Update PDRs which has not linked to this QER */
     qer_update(qer, gtp);

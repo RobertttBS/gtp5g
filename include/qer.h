@@ -34,8 +34,9 @@ struct qer {
     struct net_device *dev;
     struct rcu_head rcu_head;
 
-    struct trtcm_param meter_param;
-    struct trtcm_runtime meter_runtime;
+    struct traffic_policer ul_policer, dl_policer;
+    // struct trtcm_param meter_param;
+    // struct trtcm_runtime meter_runtime;
 };
 
 extern void qer_context_delete(struct qer *);
