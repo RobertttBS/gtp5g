@@ -18,6 +18,8 @@ int trtcm_param_config(struct trtcm_param *parameter, uint32_t gbr_high, uint8_t
     parameter->cir = ((((uint64_t) gbr_high) << 8) + gbr_low) * 1000; // Convert to bits per second, then turn Kbps to bps
     parameter->pir = ((((uint64_t) mbr_high) << 8) + mbr_low) * 1000; // Convert to bits per second, then turn Kbps to bps
     parameter->pir -= parameter->cir;
+    if (!parameter->pir)
+        parameter->pir = 100000000; // 100 Mbps for default MBR. No GBR.
     parameter->cbs = MTU * 20;
     parameter->pbs = MTU * 20;
     return 0;
