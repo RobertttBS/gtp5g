@@ -691,6 +691,9 @@ static int gtp5g_rx(struct pdr *pdr, struct sk_buff *skb,
     u64 volume_mbqe = 0;
     struct far *far = rcu_dereference(pdr->far);
     // struct qer *qer = rcu_dereference(pdr->qer);
+    struct qer *qer = pdr->qer;
+    uint64_t maxGBR, minMBR, now, delay = 10000;
+    char color;
 
     if (!far) {
         GTP5G_ERR(pdr->dev, "FAR not exists for PDR(%u)\n", pdr->id);
@@ -698,10 +701,28 @@ static int gtp5g_rx(struct pdr *pdr, struct sk_buff *skb,
     }
 
     //TODO: QER
-    //if (qer) {
-    //    printk_ratelimited("%s:%d QER Rule found, id(%#x) qfi(%#x)\n", __func__, __LINE__,
-    //        qer->id, qer->qfi);
-    //}
+    if (qer) {
+        // TODO: set up GBR
+        maxGBR = ((((u64) qer->gbr.ul_high) << 8) + qer->gbr.ul_low) * 1000;
+        // EDT delay computation
+        delay = div64_ul(skb->len << 3, maxGBR);
+        // delay = ((u64)skb->len << 3) * NSEC_PER_SEC / maxGBR;
+
+        // setup MBR
+        minMBR = ((((u64) qer->mbr.ul_high) << 8) + qer->mbr.ul_low) * 1000;
+        // trTCM metering
+        now = ktime_get_ns();
+        color = trtcm_color_blind_check(&(qer->ul_policer.param), &(qer->ul_policer.runtime), now, skb->len);
+        if (color == 'R') {
+            rt = gtp5g_drop_skb_encap(skb, pdr->dev, pdr);
+            goto out;
+        }
+        // } else if (color == 'G')
+        //     skb->priority = 60;
+        // else
+        //     skb->priority = 30;
+    }
+    skb->priority = delay + 1; /* Don't let it be 0, bpf program will add default delay. */
 
     // TODO: not reading the value of outer_header_removal now,
     // just check if it is assigned.
@@ -945,9 +966,8 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
     struct qer *qer;
     //struct gtp5g_qer *qer;
     struct iphdr *iph;
-    u64 volume_mbqe = 0, maxGBR = 0, delay = 0, minMBR = 0xffffffffffffffff;
+    u64 volume_mbqe = 0, maxGBR = 0, delay = 10000, minMBR = 0xffffffffffffffff;
     uint64_t now;
-    int i = 0;
     char color;
 
     /* Read the IP destination address and resolve the PDR.
@@ -966,36 +986,28 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
 
     /* TODO: QoS rule have to apply before apply FAR 
      * */
-	// Find QER (Suppose that one PDR will only map to one QER)
-    for (i = 0; i < pdr->qer_num; i++) {
-        qer = find_qer_by_id(gtp, pdr->seid, pdr->qer_ids[i]);
-        if (qer)
-            break;
-    }
+    qer = pdr->qer;
     if (qer) {
         // TODO: set up GBR
-        maxGBR = ((((u64) qer->gbr.ul_high) << 8) + qer->gbr.ul_low);
+        maxGBR = ((((u64) qer->gbr.dl_high) << 8) + qer->gbr.dl_low) * 1000;
         // EDT delay computation
-        delay = ((u64)skb->len << 3) * NSEC_PER_SEC / maxGBR;
+        delay = div64_ul(skb->len << 3, maxGBR);
+        // delay = ((u64)skb->len << 3) * NSEC_PER_SEC / maxGBR;
 
         // setup MBR
-        minMBR = ((((u64) qer->mbr.dl_high) << 8) + qer->mbr.dl_low);
+        minMBR = ((((u64) qer->mbr.dl_high) << 8) + qer->mbr.dl_low) * 1000;
         // trTCM metering
         now = ktime_get_ns();
-        color = trtcm_color_blind_check(&(qer->meter_param), &(qer->meter_runtime), now, skb->len);
+        color = trtcm_color_blind_check(&(qer->dl_policer.param), &(qer->dl_policer.runtime), now, skb->len);
         if (color == 'R')
             return gtp5g_drop_skb_ipv4(skb, dev, pdr);
-        else if (color == 'G')
-            skb->priority = 60;
-        else
-            skb->priority = 50;
-    } else {
-        // setup default delay
-        delay = 500000000;
-
-        // setup default priority
-        skb->priority = 0;
+        // else if (color == 'G')
+        //     skb->priority = 60;
+        // else
+        //     skb->priority = 30;
     }
+    skb->priority = delay + 1; /* Don't let it be 0, bpf program will add default delay. */
+    // skb->priority = 20;
 
     far = rcu_dereference(pdr->far);
     if (far) {

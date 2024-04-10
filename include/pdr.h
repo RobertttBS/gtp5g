@@ -69,6 +69,7 @@ struct pdr {
     u32 *qer_ids; 
     u32 qer_num;
     u8  qfi;
+    struct qer *qer;
     u32 *urr_ids;
     u32 urr_num;
     struct urr *urr;

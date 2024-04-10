@@ -28,6 +28,11 @@ struct trtcm_runtime {
     uint32_t remainder_bits_p; // Remainder of the bits of the last update
 };
 
+struct traffic_policer {
+    struct trtcm_param param;
+    struct trtcm_runtime runtime;
+};
+
 extern int trtcm_param_config(struct trtcm_param *, uint32_t, uint8_t, uint32_t, uint8_t);
 extern int trtcm_runtime_config(struct trtcm_param *, struct trtcm_runtime *);
 extern char trtcm_color_blind_check(struct trtcm_param *, struct trtcm_runtime *, uint64_t, uint64_t);
