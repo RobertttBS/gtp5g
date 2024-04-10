@@ -692,7 +692,7 @@ static int gtp5g_rx(struct pdr *pdr, struct sk_buff *skb,
     struct far *far = rcu_dereference(pdr->far);
     // struct qer *qer = rcu_dereference(pdr->qer);
     struct qer *qer = pdr->qer;
-    uint64_t maxGBR, minMBR, now, delay;
+    uint64_t maxGBR, minMBR, now, delay = 10000;
     char color;
 
     if (!far) {
@@ -716,11 +716,13 @@ static int gtp5g_rx(struct pdr *pdr, struct sk_buff *skb,
         if (color == 'R') {
             rt = gtp5g_drop_skb_encap(skb, pdr->dev, pdr);
             goto out;
-        } else if (color == 'G')
-            skb->priority = 60;
-        else
-            skb->priority = 50;
+        }
+        // } else if (color == 'G')
+        //     skb->priority = 60;
+        // else
+        //     skb->priority = 30;
     }
+    skb->priority = delay + 1; /* Don't let it be 0, bpf program will add default delay. */
 
     // TODO: not reading the value of outer_header_removal now,
     // just check if it is assigned.
@@ -964,7 +966,7 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
     struct qer *qer;
     //struct gtp5g_qer *qer;
     struct iphdr *iph;
-    u64 volume_mbqe = 0, maxGBR = 0, delay = 0, minMBR = 0xffffffffffffffff;
+    u64 volume_mbqe = 0, maxGBR = 0, delay = 10000, minMBR = 0xffffffffffffffff;
     uint64_t now;
     char color;
 
@@ -999,16 +1001,13 @@ int gtp5g_handle_skb_ipv4(struct sk_buff *skb, struct net_device *dev,
         color = trtcm_color_blind_check(&(qer->dl_policer.param), &(qer->dl_policer.runtime), now, skb->len);
         if (color == 'R')
             return gtp5g_drop_skb_ipv4(skb, dev, pdr);
-        else if (color == 'G')
-            skb->priority = 60;
-        else
-            skb->priority = 50;
-    } else {
-        // setup default delay
-        delay = 500000000;
-        // setup default priority
-        skb->priority = 0;
+        // else if (color == 'G')
+        //     skb->priority = 60;
+        // else
+        //     skb->priority = 30;
     }
+    skb->priority = delay + 1; /* Don't let it be 0, bpf program will add default delay. */
+    // skb->priority = 20;
 
     far = rcu_dereference(pdr->far);
     if (far) {
